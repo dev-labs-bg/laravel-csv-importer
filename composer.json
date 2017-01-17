@@ -1,0 +1,29 @@
+{
+    "name": "yavor-ivanov/csv-importer",
+    "description": "A CSV importer/exporter library for Laravel",
+    "keywords": ["laravel", "csv", "database", "import", "export"],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Yavor Ivanov",
+            "email": "yavor@devlabs.bg"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0",
+        "illuminate/support": "4.2.*",
+        "mnshankar/CSV": "1.8",
+        "marcj/topsort": "~0.1"
+    },
+    "autoload": {
+        "classmap": [
+            "src/migrations",
+            "src/YavorIvanov/CsvImporter/commands"
+        ],
+        "psr-0": {
+            "YavorIvanov\\CsvImporter\\": "src/"
+        }
+    },
+    "minimum-stability": "stable"
+}
