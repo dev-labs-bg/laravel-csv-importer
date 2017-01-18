@@ -2,6 +2,7 @@
 
 use MJS\TopSort\Implementations\ArraySort;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Database\Eloquent\Model as Eloquent;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
 include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'include_dir.php');
@@ -84,8 +85,9 @@ abstract class CSVImporter
         include_dir(Config::get('csv-importer::import.class_path'));
         $importer_classes = array_filter(get_declared_classes(), function ($cls)
         {
-            // Remove self from list.
-            return preg_match('/^(?!CSV)(.*)Importer$/', $cls);
+            // Match all importers and exclude self.
+            $match = preg_match(Config::get('csv-importer::import.class_match_pattern'), $cls);
+            return $match && $cls != __CLASS__;
         });
         foreach ($importer_classes as $key=>$cls)
         {
