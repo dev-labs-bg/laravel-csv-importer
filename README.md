@@ -151,7 +151,7 @@ class UserRole extends Eloquent
 }
 ```
 
-The [`CSVReferenceTrait`](src/YavorIvanov/CsvImporter/CSVReferenceTrait.phpp) registers a `save` hook, which sets the proper `csv_id` for models saved without one.
+The [`CSVReferenceTrait`](src/YavorIvanov/CsvImporter/CSVReferenceTrait.php) registers a `save` hook, which sets the proper `csv_id` for models saved without one.
 
 **NOTE:** You **can** import to properties not listed in the `$fillable` array, as the importer turns off the Eloquent field guarding while importing. (Don't worry, it re-guards them when it's done.)
 
