@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Database\Eloquent\Model as Eloquent;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
+use \DateTime;
 include_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'include_dir.php');
 
 function listify($val)
@@ -42,7 +43,7 @@ abstract class CSVImporter
 
             'to_datetime' => function ($v, $fmt='d/m/y H:i')
             {
-                $created_at = \DateTime::createFromFormat($fmt, $v);
+                $created_at = DateTime::createFromFormat($fmt, $v);
                 return $created_at->format('Y-m-d H:i:s');
             },
 
