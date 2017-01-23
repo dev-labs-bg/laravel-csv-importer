@@ -42,7 +42,7 @@ abstract class CSVImporter
 
             'to_datetime' => function ($v, $fmt='d/m/y H:i')
             {
-                $created_at = DateTime::createFromFormat($fmt, $v);
+                $created_at = \DateTime::createFromFormat($fmt, $v);
                 return $created_at->format('Y-m-d H:i:s');
             },
 
