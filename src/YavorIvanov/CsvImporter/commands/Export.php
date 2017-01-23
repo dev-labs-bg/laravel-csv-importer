@@ -32,8 +32,8 @@ class Export extends Command
                 $this->info('Exporting: '. ucfirst($name) . '.');
             $exporter = CSVExporter::get_exporter($name);
 
-            // TODO: Create an argument validation function; Laravel seems to
-            //       lack one.
+            // TODO <Yavor>: Create an argument validation function; Laravel seems to
+            //               lack one.
             if (! $exporter)
             {
                 $exporters = implode(', ', array_merge(array_keys(CSVExporter::get_exporters()), ['all']));

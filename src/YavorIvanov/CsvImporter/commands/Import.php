@@ -47,8 +47,8 @@ class Import extends Command
                 $this->info('Importing: '. ucfirst($model) . '.');
             $importer = CSVImporter::get_importer($model);
 
-            // TODO: Create an argument validation function; Laravel seems to
-            //       lack one.
+            // TODO <Yavor>: Create an argument validation function; Laravel seems to
+            //               lack one.
             if (! $importer)
             {
                 $importers = implode(', ', array_merge(array_keys(CSVImporter::get_importers()), ['all']));
