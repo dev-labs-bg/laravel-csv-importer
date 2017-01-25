@@ -29,7 +29,7 @@ abstract class CSVImporter
     public static $modes = ['default'=>'append', 'overwrite', 'update', 'validate'];
     private $mode = '';
 
-    // Primary key, used for intra-csv file relations.
+    // Primary key - used for intra-csv file relations.
     // The cache key is used if no primary key is defined.
     protected $primary_key = '';
 
@@ -159,6 +159,7 @@ abstract class CSVImporter
 
     public static function importer_name($cls)
     {
+        // TODO <Yavor>: Use the importer configuration.
         return strtolower(str_replace('Importer', '', $cls));
     }
 
@@ -185,7 +186,7 @@ abstract class CSVImporter
 
     function __construct()
     {
-        // Derived classes inherit the base class processors.
+        // Derived classes inherit the base class validators/processors.
         $this->validators = array_merge(
             self::get_validators(),
             $this->get_validators()
@@ -238,6 +239,11 @@ abstract class CSVImporter
             $dep_import_mode = $mode;
 
             // Don't cascade overwrite.
+            //
+            // TODO <Yavor>: Add an option to override this.
+            // Maybe have override-single and override-cascade modes?
+            // Cascading override could just show the list of dependencies that would be overriden,
+            // along with a strong warning about what that means about database cascade deletion, etc.
             if ($mode == 'overwrite')
                 $dep_import_mode = 'append';
             $dep->import(Null, $dep_import_mode);
@@ -299,7 +305,14 @@ abstract class CSVImporter
 
     protected function parse_row($row)
     {
-        // Remove empty cells
+        // NOTE <Yavor>: CSV cells with no values for a column get removed from the
+        // $row array, instead of defaulting to a NULL value, as NULL may be
+        // a legitimate value.
+        //
+        // FIXME <Yavor>: As of the moment, there is no way to default missing cells to any
+        // value via processors, as they are eliminated before the preprocessing step.
+        // For now, you'll need to manually check if the column exists in the
+        // $row array in the import/update.
         $cols_values  = array_filter($row);
         $column_processors = array_where($this->column_mappings, function($k, $v)
         {
@@ -342,7 +355,9 @@ abstract class CSVImporter
 
     protected function validate_row($row)
     {
-        // Remove empty cells
+        // NOTE <Yavor>: CSV cells with no values for a column get removed from the
+        // $row array, instead of defaulting to a NULL value, as NULL may be
+        // a legitimate value.
         $cols_values  = array_filter($row);
         $column_validators = array_where($this->column_mappings, function($k, $v)
         {

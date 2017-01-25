@@ -121,9 +121,15 @@ abstract class CSVExporter
                 $row = $this->postprocess_row($row);
                 array_push($csv, $row);
             }
-            $max_row_length = max(array_map('count', $csv));
+            $rows2column_count = array_map('count', $csv);
+            $max_length_index = array_keys($rows2column_count, max($rows2column_count));
+            $longest_row = $csv[reset($max_length_index)];
             foreach ($csv as $k=>$row)
-                $csv[$k] = array_pad($row, $max_row_length, '');
+            {
+                for ($i = count($row); $i < count($longest_row); $i++)
+                    $row[array_keys($longest_row)[$i]] = '';
+                $csv[$k] = $row;
+            }
             $path = $this->file;
             $CSV = new \mnshankar\CSV\CSV();
             $CSV->with($csv)->put($path);
