@@ -45,7 +45,7 @@ mkdir app/csv/exporters
 ```
 
 # Examples
-I've set up an [examples repository](https://github.com/Yavor-Ivanov/laravel-csv-importer-examples) containing a Laravel 4 application with multiple importers and exporters.
+I've set up an [examples repository](https://github.com/dev-labs-bg/laravel-csv-importer-examples) containing a Laravel 4 application with multiple importers and exporters.
 
 # Configuration
 The importer package comes preconfigured to look for CSV files and importer/exporter scripts in the `app/csv/files/` and `app/csv/importer` (and exporter) folders. If you wish to change this, you'll need to first get your own (application) copy of the configuration by running the following command:
