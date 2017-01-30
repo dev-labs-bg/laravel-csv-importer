@@ -90,6 +90,7 @@ In exchange for these limitation, the package is able to automatically register 
 The package comes with two commands `csv:import` and `csv:export`
 
 The command format is: ```csv:import <importer_name> [<mode>]```
+
 Example usage: ```php artisan csv:import categories``` or ```php artisan csv:import expenses validate```
 
 The importer supports the following modes:
@@ -207,14 +208,18 @@ Field breakdown:
   - `$cache_key` - The package caches entities already in the database as well as entities being imported in order to decrease the amount of database queries for self-referencing CSV files, update mode imports, as well as skip duplicate imports. In order to do that, the package needs to know the mapping between the primary unique column of the CSV and the database table.
   - `$primary_key` - All importers share a `context`, from which you may retrieve entities of a dependency importer. This works exactly as foreign keys do, i.e.: CSV `A` references a row from CSV `B` by some unique column. The `$primary_key` is the mapping between that (CSV) unique column and a database table unique column.
   By default, the CSV id column is named `id`, while the table column is `csv_id`.
+  
   **Note:** The importer cannot use the (more or less default) `id ` column in the table for comparison, because id collisions may occur when appending to a non-empty table.
 
 
   - `import_row` - Once the importer diffs the database table and CSV it iterates over the **new** rows in the CSV file. For every new row found, the `import_row` function is called. The base importer passes the current row in the `$row` parameter, and expects an Eloquent model to be returned.
+  
   **Note:** At the moment, importer does not support conditional importing of rows. The `import_row` function must return a model instance.
   - `update` - This function is called by the base importer for every record found in **both** the database table and the CSV. The importer passes the current CSV row in the `$row` parameter, as well as the Eloquent model from the database in the `$o` parameter.
-**Note:** Currently, the importer doesn't check for actual changes to the model. **It will always call the function**. Because of this current limitation, you must manually call `save()` on your models.
-**Note:** This function is only every called when running the importer in `update` mode.
+  
+  **Note:** Currently, the importer doesn't check for actual changes to the model. **It will always call the function**. Because of this current limitation, you must manually call `save()` on your models.
+  
+  **Note:** This function is only every called when running the importer in `update` mode.
 
 ### Column mappings
 Often, the database table columns differ in name (or representation) from the CSV files you wish to import. For example, databases accept dates in the [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601) (`YYY-MM-DD`), but your CSV files may contain dates in the American date format (`MM/DD/YYYY`). The `$column_mappings` property allow you to define any name difference between CSV and database table, as well as transform and validate the CSV data before saving.
@@ -298,6 +303,7 @@ The column on which to select on is determined by the `$primary_key` property of
 
 ### Caching
 In the beginning of the import, the package selects all rows from the importer's `$model` table, and caches them by a unique CSV column in the `$cache_key` mapping:
+
 `protected $cache_key = ['table_column_name' => 'csv_column_name'];`
 
 This allows the package to avoid importing CSV rows that are already in the database. Each CSV record can be checked for inclusion in the database by comparing the values of the unique keys defined in the `$cache_key` mapping. For example, a mapping of `id` <--> `csv_id` would search the cache for an Eloquent entity with an `id` equal to the current CSV row's `csv_id`.
@@ -336,7 +342,7 @@ protected function get_processors()
 
 The [base importer](https://github.com/Yavor-Ivanov/laravel-csv-importer/blob/master/src/YavorIvanov/CsvImporter/CSVImporter.php#L39) also defines its own processors that can be used by all importers, [as they are 'inherited'](https://github.com/Yavor-Ivanov/laravel-csv-importer/blob/master/src/YavorIvanov/CsvImporter/CSVImporter.php#L189).
 
-Note: As of the moment there is no way to register global preprocessors like the base importer does.
+**Note:** As of the moment there is no way to register global preprocessors like the base importer does.
 
 ### Adding validation functions
 Validation functions are defined similarly to the preprocessors. The `get_validators` function of the importer returns an array of functions that can be defined to run when an importer runs via the `$column_mappings` property.
@@ -371,12 +377,14 @@ The validator functions receive both the column name they have been called on an
 
 ### Column pivoting
 Sometimes your pivot CSV table nicely mirrors the database pivot table:
+
 | book_id |  genre_id | 
 |---------|-----------| 
 | 1       | 2         | 
 | 1       | 1         | 
 
 Other times, your many to many pivot CSV may come in a weird, multiple column format:
+
 | book_id |  genre1 |  genre2 |  ... | 
 |---------|---------|---------|------| 
 | 1       | 2       |  1      |      | 
