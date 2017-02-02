@@ -231,6 +231,12 @@ abstract class CSVImporter
     {
         DB::beginTransaction();
         $this->mode = $mode;
+
+        if ($mode == 'update' && !method_exists($this, 'update'))
+            throw new \BadMethodCallException("Importer $this->name (" .
+                            get_called_class() .
+                            ") called in update mode, but doesn't define an update function.");
+
         // Resolve dependencies.
         foreach ($this::get_dependencies() as $name)
         {

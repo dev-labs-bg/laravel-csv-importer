@@ -62,7 +62,14 @@ class Import extends Command
                 return;
             }
 
-            $res = (new $importer)->import(Null, $this->argument('mode'));
+            try
+            {
+                $res = (new $importer)->import(Null, $this->argument('mode'));
+            }
+            catch (\BadMethodCallException $e)
+            {
+                $this->error($e->getMessage());
+            }
         }
     }
 
