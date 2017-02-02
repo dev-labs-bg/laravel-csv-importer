@@ -164,6 +164,7 @@ The [`CSVReferenceTrait`](src/YavorIvanov/CsvImporter/CSVReferenceTrait.php) reg
 
 **NOTE:** You **can** import to properties not listed in the `$fillable` array, as the importer turns off the Eloquent field guarding while importing. (Don't worry, it re-guards them when it's done.)
 
+# Importers
 ### Minimum configuration importer example
 The following is the minimum configuration needed to create an importer class, which creates a collection of `UserRole` models and imports them to the database, and supports `update` mode:
 
@@ -413,6 +414,132 @@ protected function pivot_row($row)
 ```
 
 The pivot step is run before column processors and validators.
+
+# Exporters
+### Minimum configuration exporter example
+
+The following is a minimal exporter example using the `$column_mapping` to drive the CSV export:
+
+```
+<?php
+use YavorIvanov\CsvImporter\CSVExporter;
+class UserRolesImporter extends CSVExporter
+{
+    // Defualt name for the CSV to export.
+    public $file = 'user_roles.csv';
+
+    // Eloquent model to select from (case sensitive)
+    protected $model = 'UserRole';
+    
+    protected $column_mapping = [
+        'csv_id' => 'id',
+        'role_name',
+    ];
+}
+```
+
+**Note:** Every exporter class name must end with Exporter (controlled by the class_match_pattern property) and extend the CSVExporter base class.
+
+### Field breakdown:
+
+- `$file` - The name of the file to save to. The default path to file is `app/csv/files/` (csv folder configurable)
+- `$model` - The package uses the Eloquent ORM to read data from the database. In order to select records, the package needs to know the model the exporter corresponds to.
+
+### Column mappings
+
+The exporter `$column_paiings` property serves the same purpose as the importer [`$column_mappings`](https://github.com/dev-labs-bg/laravel-csv-importer/#column-mappings). It allows you to define a relationship between the table columns (or model properties/methods) and CSV columns. The exporter uses this mapping to generate the CSV output.
+
+Unlike the importer, the exporter `$column_mappings` allow you to use model properties, as well as map model functions to CSV columns. Here's an example of a mappnig between a model property and a CSV column that uses a postprocessing function:
+
+```
+protected $column_mappings = [
+    'model_property' => ['csv_column' => ['postprocessor_name' => 'parameter']],
+];
+```
+
+And an example of an exporter mapping a model function to a CSV column:
+
+```
+protected $column_mappings = [
+    'compute_property()' => ['csv_column_name' => ['postprocessor_name' => 'parameter']],
+];
+```
+
+Exporting is generally more straightforward than importing, so there's no need to use an `export_row` like function [(although the option is available)](https://github.com/dev-labs-bg/laravel-csv-importer/#generating-rows-programatically). The exporter can read the `$column_mappings` and automatically outputs the CSV file.
+
+In order to support certain mappings, the importer evaluates the key of the `$column_mappings` entry (`model_property` in the above example) and uses the result as the value of `csv_column` when exporting. Some examples of such mappings are: computed properties, aggregate functions, and relationship properties.
+
+The [book exporter example](https://github.com/dev-labs-bg/laravel-csv-importer-examples/blob/master/app/csv/exporters/BookExporter.php#L35) uses such a mapping to get the csv id of its `authors` relationship:
+
+```
+    protected $column_mapping = [
+        ['authors()->first()->csv_id' => 'author'],
+        // ...
+    ];
+```
+
+**Note:** The exporter uses the `$column_mapping` key as part of an [`eval()`](https://github.com/dev-labs-bg/laravel-csv-importer/blob/master/src/YavorIvanov/CsvImporter/CSVExporter.php#L51) call. The call is limited to the current model instance, **yet there are no checks for malicious intent**, such as calling `delete()` or using `id; call_malicious_function()` as a key.
+
+Like the importer `$column_mapping` property, the exporter allows you to simplify the row declaration if you don't want to use a postprocessor, or the CSV and database columns coincide:
+
+```
+    protected $column_mapping = [
+        'name',                                                              // Column name in the CSV and database is the same
+        ['table_column' => 'csv_column'],                                    // Table column to CSV column mapping with no postprocessor
+        ['table_column' => ['csv_column' => ['processor_name']]],            // Post-processor without paramers (use defaults).
+        ['table_column' => ['csv_column' => ['processor_name' => 'param']]], // Post-processor with parameters.
+        ['table_column' => ['csv_column' => [
+            'processor1' => ['param1', 'param2'],
+            'processor2' => 'param',
+            'processor3']
+        ]]],                                                                 // Multiple post-processors with a differing number of parameters. 
+    ];
+```
+
+### Post-processing
+
+Like the importer, the package reads post-processor functions from the result of the `get_processors` function:
+
+```
+protected function get_processors()
+{
+    return [
+            'null_to_zero' => function ($v)
+            {
+                if ($v == Null)
+                    return 0;
+                return $v;
+            },
+    ];
+}
+```
+The function names of the post-processors are determined by the array keys returned from `get_processors`.
+
+### Generating rows programatically
+
+Sometimes, the column mappings just aren't flexible enough to handle your export logic. In such cases, you can use the `generate_row` function to generate the rows programatically. Cases where you may want to do this include: [exporting CSV files with a variable number of columns](https://github.com/dev-labs-bg/laravel-csv-importer-examples/blob/master/app/csv/exporters/BookGenreExporter.php#L58), exporting CSVs with data from multiple models, exporting data external to the model, etc.
+
+Once the export process is started, the exporter selects all records from the `$model` entity, and calls `generate_row` on each record. The function should return an array in the following format: `['csv_column1' => 'value', 'csv_column2' => 'other_vaule']`.
+
+The following is an example of exporting a CSV with a variable number of columns. [You can see the full code in the examples](https://github.com/dev-labs-bg/laravel-csv-importer-examples/blob/master/app/csv/exporters/BookGenreExporter.php#L58):
+
+```
+protected function generate_row($o)
+{
+    $row = parent::generate_row($o);
+    $heading = 'genre';
+    $current = 1;
+    foreach ($o->genres as $genre)
+    {
+        $col_name = $heading . $current;
+        $current += 1;
+        $row[$col_name] = $genre->csv_id;
+    }
+    return $row;
+}
+```
+
+**Note:** If you choose to override this function, the exporter will not process the `$column_mapping` property, upnless you call `parent::generate_row()`. This allows you to mix custom row generation logic with column mappings (or you can skip the automatic mapping entirely).
 
 # Licensed under the MIT license
 The project license file can be found [here](/LICENSE).
