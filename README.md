@@ -201,7 +201,7 @@ class UserRolesImporter extends CSVImporter
     }
 }
 ```
-Every importer name must end with `Importer` (controlled by the `class_match_pattern` property) and extend the `CSVImporter` base class.
+Every importer name must end with `Importer` (controlled by the [`class_match_pattern`](https://github.com/dev-labs-bg/laravel-csv-importer#configuration) property) and extend the `CSVImporter` base class.
 
 Field breakdown:
   - `$file` - The name of the file to load from `app/csv/files/` (csv folder configurable)
@@ -438,7 +438,7 @@ class UserRolesImporter extends CSVExporter
 }
 ```
 
-**Note:** Every exporter class name must end with Exporter (controlled by the class_match_pattern property) and extend the CSVExporter base class.
+**Note:** Every exporter class name must end with Exporter (controlled by the [`class_match_pattern`](https://github.com/dev-labs-bg/laravel-csv-importer#configuration) property) and extend the CSVExporter base class.
 
 ### Field breakdown:
 
@@ -447,7 +447,7 @@ class UserRolesImporter extends CSVExporter
 
 ### Column mappings
 
-The exporter `$column_paiings` property serves the same purpose as the importer [`$column_mappings`](https://github.com/dev-labs-bg/laravel-csv-importer/#column-mappings). It allows you to define a relationship between the table columns (or model properties/methods) and CSV columns. The exporter uses this mapping to generate the CSV output.
+The exporter `$column_mappings` property serves the same purpose as the importer [`$column_mappings`](https://github.com/dev-labs-bg/laravel-csv-importer/#column-mappings). It allows you to define a relationship between the table columns (or model properties/methods) and CSV columns. The exporter uses this mapping to generate the CSV output.
 
 Unlike the importer, the exporter `$column_mappings` allow you to use model properties, as well as map model functions to CSV columns. Here's an example of a mappnig between a model property and a CSV column that uses a postprocessing function:
 
@@ -480,20 +480,20 @@ The [book exporter example](https://github.com/dev-labs-bg/laravel-csv-importer-
 
 **Note:** The exporter uses the `$column_mapping` key as part of an [`eval()`](https://github.com/dev-labs-bg/laravel-csv-importer/blob/master/src/YavorIvanov/CsvImporter/CSVExporter.php#L51) call. The call is limited to the current model instance, **yet there are no checks for malicious intent**, such as calling `delete()` or using `id; call_malicious_function()` as a key.
 
-Like the importer `$column_mapping` property, the exporter allows you to simplify the row declaration if you don't want to use a postprocessor, or the CSV and database columns coincide:
+Like the importer `$column_mapping` property, the exporter allows you to simplify the row declaration if you don't need to use a postprocessor, or the CSV and database columns coincide:
 
 ```
-    protected $column_mapping = [
-        'name',                                                              // Column name in the CSV and database is the same
-        ['table_column' => 'csv_column'],                                    // Table column to CSV column mapping with no postprocessor
-        ['table_column' => ['csv_column' => ['processor_name']]],            // Post-processor without paramers (use defaults).
-        ['table_column' => ['csv_column' => ['processor_name' => 'param']]], // Post-processor with parameters.
-        ['table_column' => ['csv_column' => [
-            'processor1' => ['param1', 'param2'],
-            'processor2' => 'param',
-            'processor3']
-        ]]],                                                                 // Multiple post-processors with a differing number of parameters. 
-    ];
+protected $column_mapping = [
+    'name',                                                              // Column name in the CSV and database is the same
+    ['table_column' => 'csv_column'],                                    // Table column to CSV column mapping with no postprocessor
+    ['table_column' => ['csv_column' => ['processor_name']]],            // Post-processor without paramers (use defaults).
+    ['table_column' => ['csv_column' => ['processor_name' => 'param']]], // Post-processor with parameters.
+    ['table_column' => ['csv_column' => [
+        'processor1' => ['param1', 'param2'],
+        'processor2' => 'param',
+        'processor3']
+    ]]],                                                                 // Multiple post-processors with a differing number of parameters. 
+];
 ```
 
 ### Post-processing
@@ -539,7 +539,7 @@ protected function generate_row($o)
 }
 ```
 
-**Note:** If you choose to override this function, the exporter will not process the `$column_mapping` property, upnless you call `parent::generate_row()`. This allows you to mix custom row generation logic with column mappings (or you can skip the automatic mapping entirely).
+**Note:** If you choose to override this function, the exporter will not process the `$column_mapping` property, unless you call `parent::generate_row()`. This allows you to mix custom row generation logic with column mappings if you want (or skip the automatic mapping entirely).
 
 # Licensed under the MIT license
 The project license file can be found [here](/LICENSE).
