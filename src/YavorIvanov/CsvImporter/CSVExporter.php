@@ -64,7 +64,8 @@ abstract class CSVExporter
 
     public static function exporter_name($cls)
     {
-        return strtolower(str_replace('Exporter', '', $cls));
+        preg_match(Config::get('csv-importer::export.class_match_pattern'), $cls, $groups);
+        return strtolower($groups[1]);
     }
 
     public static function get_exporters()

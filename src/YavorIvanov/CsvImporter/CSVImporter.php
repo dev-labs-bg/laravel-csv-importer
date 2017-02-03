@@ -159,8 +159,8 @@ abstract class CSVImporter
 
     public static function importer_name($cls)
     {
-        // TODO <Yavor>: Use the importer configuration.
-        return strtolower(str_replace('Importer', '', $cls));
+        preg_match(Config::get('csv-importer::import.class_match_pattern'), $cls, $groups);
+        return strtolower($groups[1]);
     }
 
     protected function delete_records()
