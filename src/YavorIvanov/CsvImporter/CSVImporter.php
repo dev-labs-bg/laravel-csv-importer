@@ -238,10 +238,10 @@ abstract class CSVImporter
                             ") called in update mode, but doesn't define an update function.");
 
         // Resolve dependencies.
+        $dep2class = $this::get_importers();
         foreach ($this::get_dependencies() as $name)
         {
-            $clsname = ucfirst($name) . 'Importer';
-            $dep = new $clsname();
+            $dep = new $dep2class[$name];
             $dep_import_mode = $mode;
 
             // Don't cascade overwrite.
