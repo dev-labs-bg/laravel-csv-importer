@@ -37,13 +37,11 @@ class Backup  extends Command
             if (file_exists($file))
             {
                 copy($file, app_path() . \Config::get('csv-importer::export.backup_csv_path') . date('Y_m_d_His_') . basename($file));
-                if (! $this->option('silent'))
-                    $this->info('Backed up: '. ucfirst($model) . '.');
+                $this->info('Backed up: '. ucfirst($model) . '.');
             }
             else
             {
-                if (! $this->option('silent'))
-                    $this->info('File: '. $file . ' does not exist or permissions are insufficient.');
+                $this->info('File: '. $file . ' does not exist or permissions are insufficient.');
             }
         }
     }
@@ -55,16 +53,6 @@ class Backup  extends Command
                 'model',
                 InputArgument::REQUIRED, 'Specify which model to backup. Valid models are: ' .
                 implode(', ', array_merge(array_keys(CSVImporter::get_importers()), ['all'])), Null
-            ],
-        ];
-    }
-
-    protected function getOptions()
-    {
-        return [
-            [
-                'silent', null, InputOption::VALUE_NONE,
-                'If passed, shows no output.'
             ],
         ];
     }

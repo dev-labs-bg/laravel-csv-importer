@@ -46,8 +46,7 @@ class Import extends Command
             $models = [$model];
         foreach ($models as $model)
         {
-            if (! $this->option('silent'))
-                $this->info('Importing: '. ucfirst($model) . '.');
+            $this->info('Importing: '. ucfirst($model) . '.');
             $importer = CSVImporter::get_importer($model);
 
             // TODO <Yavor>: Create an argument validation function; Laravel seems to
@@ -89,20 +88,6 @@ class Import extends Command
                 InputArgument::OPTIONAL, 'Specifies the mode the importer runs in. ' .
                 'Valid modes are: ' . implode(', ', array_values(CSVImporter::$modes)) . '.',
                 CSVImporter::$modes['default']
-            ],
-        ];
-    }
-
-    protected function getOptions()
-    {
-        return [
-            [
-                'silent', null, InputOption::VALUE_NONE,
-                'If passed, shows no output.'
-            ],
-            [
-                'dbg', null, InputOption::VALUE_NONE,
-                'If passed, shows additional output.'
             ],
         ];
     }

@@ -31,8 +31,6 @@ class Export extends Command
             $models = [$model];
         foreach ($models as $name)
         {
-            if ($this->option('dbg'))
-                $this->info('Exporting: '. ucfirst($name) . '.');
             $exporter = CSVExporter::get_exporter($name);
 
             // TODO <Yavor>: Create an argument validation function; Laravel seems to
@@ -44,10 +42,9 @@ class Export extends Command
                 return;
             }
 
-            Artisan::call('csv:backup', ['model' => $name, '--silent' => true]);
+            Artisan::call('csv:backup', ['model' => $name, '-q' => true]);
             $res = (new $exporter)->export(Null);
-            if (! $this->option('silent'))
-                $this->info('Exported: '. ucfirst($name) . '.');
+            $this->info('Exported: '. ucfirst($name) . '.');
         }
     }
 
@@ -58,20 +55,6 @@ class Export extends Command
                 'model',
                 InputArgument::REQUIRED, 'Specify which model to import. Valid models are: ' .
                 implode(', ', array_merge(array_keys(CSVExporter::get_exporters()), ['all'])), Null
-            ],
-        ];
-    }
-
-    protected function getOptions()
-    {
-        return [
-            [
-                'silent', null, InputOption::VALUE_NONE,
-                'If passed, shows no output.'
-            ],
-            [
-                'dbg', null, InputOption::VALUE_NONE,
-                'If passed, shows additional output.'
             ],
         ];
     }
