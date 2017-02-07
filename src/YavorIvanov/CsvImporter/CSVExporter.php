@@ -70,7 +70,9 @@ abstract class CSVExporter
 
     public static function get_exporters()
     {
-        include_dir(Config::get('csv-importer::export.class_path'));
+        $path = Config::get('csv-importer::export.register_path');
+        $match_file = (Config::get('csv-importer::export.file_match'));
+        include_dir($path . $match_file);
         $exporter_classes = array_filter(get_declared_classes(), function ($cls)
         {
             // Match all importers and exclude self.

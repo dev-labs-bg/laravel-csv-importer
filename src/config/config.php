@@ -2,13 +2,16 @@
 
 return array(
     'import' => [
-        'class_path' => '\\csv\\importers\\*Importer.php',
+        'file_match' => '*Importer.php',
+        'register_path' => '\\csv\\importers\\',
         'class_match_pattern' => '/^(?!CSV)(.*)Importer$/',
         'default_csv_path' => '/csv/files/',
     ],
     'export' => [
-        'class_path' => '\\csv\\exporters\\*Exporter.php',
+        'file_match' => '*Exporter.php',
+        'register_path' => '\\csv\\exporters\\',
         'class_match_pattern' => '/^(?!CSV)(.*)Exporter$/',
         'default_csv_path' => '/csv/files/',
+        'backup_csv_path' => '/csv/files/backup/',
     ],
 );

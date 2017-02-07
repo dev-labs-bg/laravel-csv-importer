@@ -83,7 +83,9 @@ abstract class CSVImporter
     {
         // TODO <Yavor>: There's lots of duplicated code with the exporter here.
         //               Move this somewhere where both can reuse it.
-        include_dir(Config::get('csv-importer::import.class_path'));
+        $path = Config::get('csv-importer::import.register_path');
+        $match_file = (Config::get('csv-importer::import.file_match'));
+        include_dir($path . $match_file);
         $importer_classes = array_filter(get_declared_classes(), function ($cls)
         {
             // Match all importers and exclude self.

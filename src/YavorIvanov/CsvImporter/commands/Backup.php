@@ -17,6 +17,8 @@ class Backup  extends Command
 
     public function fire()
     {
+        create_dir_if_not_found(app_path() . \Config::get('csv-importer::export.backup_csv_path'));
+
         $model = strtolower($this->argument('model'));
         if ($model == 'all')
             $models = CSVImporter::sort_importers(CSVImporter::get_importers());
@@ -34,7 +36,7 @@ class Backup  extends Command
             $file = (new $importer)->file;
             if (file_exists($file))
             {
-                copy($file, dirname($file) . '/backup/' . date('Y_m_d_His_') . basename($file));
+                copy($file, app_path() . \Config::get('csv-importer::export.backup_csv_path') . date('Y_m_d_His_') . basename($file));
                 if (! $this->option('silent'))
                     $this->info('Backed up: '. ucfirst($model) . '.');
             }

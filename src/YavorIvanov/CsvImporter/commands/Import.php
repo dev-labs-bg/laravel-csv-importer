@@ -19,6 +19,9 @@ class Import extends Command
 
     public function fire()
     {
+        create_dir_if_not_found(app_path() . \Config::get('csv-importer::import.register_path'));
+        create_dir_if_not_found(app_path() . \Config::get('csv-importer::import.default_csv_path'));
+
         Event::listen('import.start', function($row_count, $name)
         {
             $this->progressbar = $this->getHelperSet()->get('progress');

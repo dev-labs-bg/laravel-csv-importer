@@ -21,6 +21,9 @@ class Export extends Command
 
     public function fire()
     {
+        create_dir_if_not_found(app_path() . \Config::get('csv-importer::export.register_path'));
+        create_dir_if_not_found(app_path() . \Config::get('csv-importer::export.default_csv_path'));
+
         $model = strtolower($this->argument('model'));
         if ($model == 'all')
             $models = array_keys(CSVExporter::get_exporters());

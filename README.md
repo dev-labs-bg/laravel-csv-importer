@@ -57,27 +57,30 @@ You will get a copy of the default configuration in `app/config/packages/yavor-i
 This is what the default config file looks like:
 ```
     'import' => [
-        'class_path' => '\\csv\\importers\\*Importer.php',
+        'file_match' => '*Importer.php',
+        'register_path' => '\\csv\\importers\\',
         'class_match_pattern' => '/^(?!CSV)(.*)Importer$/',
         'default_csv_path' => '/csv/files/',
     ],
     'export' => [
-        'class_path' => '\\csv\\exporters\\*Exporter.php',
+        'file_match' = '*Exporter.php',
+        'register_path' => '\\csv\\exporters\\',
         'class_match_pattern' => '/^(?!CSV)(.*)Exporter$/',
         'default_csv_path' => '/csv/files/',
     ],
 ```
 
 The configuration options are ass follows:
-  - `class_path` - The location from which to include php scripts for the importers/exporters (relative to the `app` folder)
+  - `file_match` - A regular expression that matches the file names to be considered importers/exporters. The package uses this to auto-register your importer/exporter classes.
+  - `register_path` - The location from which to include php scripts for the importers/exporters (relative to the `app` folder)
   - `class_match_pattern` - The pattern by which the package distinguishes importers/exporters from other classes. This is used for the automatic importer/exporter registry.
   - `default_csv_path` - The default directory the importer/exporter looks for CSV files (relative to the `app` folder)
 
 # Naming conventions
 The package establishes the following file and class naming convention for the importer/exporters:
 
-  - All importers/exporters must be placed in their designated folders (`app/csv/importers` and `app/cs/exporters` by default). This location is controlled by the `class_path` configuration option.
-  - The PHP files themselves must end in `Importer.php` by default (`Exporter.php` for exporters). This is also controlled by the `class_path` configuration option.
+  - All importers/exporters must be placed in their designated folders (`app/csv/importers` and `app/cs/exporters` by default). This location is controlled by the `register_path` configuration option.
+  - The PHP files themselves must end in `Importer.php` by default (`Exporter.php` for exporters). This is also controlled by the `file_match` configuration option.
   - The classes in the files must match the `class_match_pattern`. Ending the class name with `Importer` or `Exporter` is enough for a valid class name by default.
 
 In exchange for these limitation, the package is able to automatically register any importers/exporters that follow the convention. This allows you to:

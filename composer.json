@@ -21,6 +21,9 @@
             "src/migrations",
             "src/YavorIvanov/CsvImporter/commands"
         ],
+        "files": [
+            "src/YavorIvanov/CsvImporter/include_dir.php"
+        ],
         "psr-0": {
             "YavorIvanov\\CsvImporter\\": "src/"
         }
