@@ -178,13 +178,13 @@ class UserRolesImporter extends CSVImporter
 {
     // Defualt name for the CSV to import.
     public $file = 'user_roles.csv';
-    
+
     // Eloquent model name to create/update (case sensitive)
     protected $model = 'UserRole';
 
     // Maps an id field in the csv to a database id field. Format ['csv_column_name' => 'db_column_name']
     protected $primary_key = ['id' => 'csv_id'];
-    
+
     // Maps an id field in the csv to a database id field. Format ['csv_column_name' => 'db_column_name']
     protected $cache_key = ['id' => 'csv_id'];
 
@@ -212,17 +212,17 @@ Field breakdown:
   - `$cache_key` - The package caches entities already in the database as well as entities being imported in order to decrease the amount of database queries for self-referencing CSV files, update mode imports, as well as skip duplicate imports. In order to do that, the package needs to know the mapping between the primary unique column of the CSV and the database table.
   - `$primary_key` - All importers share a `context`, from which you may retrieve entities of a dependency importer. This works exactly as foreign keys do, i.e.: CSV `A` references a row from CSV `B` by some unique column. The `$primary_key` is the mapping between that (CSV) unique column and a database table unique column.
   By default, the CSV id column is named `id`, while the table column is `csv_id`.
-  
+
   **Note:** The importer cannot use the (more or less default) `id ` column in the table for comparison, because id collisions may occur when appending to a non-empty table.
 
 
   - `import_row` - Once the importer diffs the database table and CSV it iterates over the **new** rows in the CSV file. For every new row found, the `import_row` function is called. The base importer passes the current row in the `$row` parameter, and expects an Eloquent model to be returned.
-  
+
   **Note:** At the moment, importer does not support conditional importing of rows. The `import_row` function must return a model instance.
   - `update` - This function is called by the base importer for every record found in **both** the database table and the CSV. The importer passes the current CSV row in the `$row` parameter, as well as the Eloquent model from the database in the `$o` parameter.
-  
+
   **Note:** Currently, the importer doesn't check for actual changes to the model. **It will always call the function**. Because of this current limitation, you must manually call `save()` on your models.
-  
+
   **Note:** This function is only every called when running the importer in `update` mode.
 
 ### Column mappings
@@ -246,7 +246,7 @@ protected function get_processors()
 {
     return [
             'integer' => function ($v) { return intval($v); },
-          
+
             'to_datetime' => function ($v, $fmt='d/m/y H:i')
             {
                 $created_at = DateTime::createFromFormat($fmt, $v);
@@ -285,7 +285,7 @@ protected $column_mappings = [
 ];
 ```
 
-### Adding dependencies and referencing an importer 
+### Adding dependencies and referencing an importer
 Often times, the data in CSV files wants to be relational in nature. In order to resolve the relationships properly, the importer needs to import files in the correct order. For instance, if the `users.csv` makes a reference to a phone number from `phone_numbers.csv`, the importer should make sure to import the phone numbers before it imports the users, as well as fetch any phone numbers that may be in the database (but not in the `phone_numbers.csv` file).
 
 The package evaluates the import order by reading the dependencies of each importer defined in the static `$deps` property. This collection of dependencies forms a dependency graph that can be [topologically sorted](https://en.wikipedia.org/wiki/Topological_sorting) to yield order in which the package must call the importers.
@@ -382,16 +382,16 @@ The validator functions receive both the column name they have been called on an
 ### Column pivoting
 Sometimes your pivot CSV table nicely mirrors the database pivot table:
 
-| book_id |  genre_id | 
-|---------|-----------| 
-| 1       | 2         | 
-| 1       | 1         | 
+| book_id |  genre_id |
+|---------|-----------|
+| 1       | 2         |
+| 1       | 1         |
 
 Other times, your many to many pivot CSV may come in a weird, multiple column format:
 
-| book_id |  genre1 |  genre2 |  ... | 
-|---------|---------|---------|------| 
-| 1       | 2       |  1      |      | 
+| book_id |  genre1 |  genre2 |  ... |
+|---------|---------|---------|------|
+| 1       | 2       |  1      |      |
 
 Although changing the CSV format to be in tune with the database table layout would be ideal, you may not always have that luxury (widely used legacy formats, for instance).
 
@@ -433,7 +433,7 @@ class UserRolesImporter extends CSVExporter
 
     // Eloquent model to select from (case sensitive)
     protected $model = 'UserRole';
-    
+
     protected $column_mapping = [
         'csv_id' => 'id',
         'role_name',
@@ -456,7 +456,7 @@ Unlike the importer, the exporter `$column_mappings` allow you to use model prop
 
 ```
 protected $column_mappings = [
-    'model_property' => ['csv_column' => ['postprocessor_name' => 'parameter']],
+    'model_property' => ['name' => 'csv_column', 'processors' => ['postprocessor_name' => 'parameter']],
 ];
 ```
 
@@ -464,13 +464,13 @@ And an example of an exporter mapping a model function to a CSV column:
 
 ```
 protected $column_mappings = [
-    'compute_property()' => ['csv_column_name' => ['postprocessor_name' => 'parameter']],
+    'compute_property()' => ['name' => 'csv_column_name', 'processors' => ['postprocessor_name' => 'parameter']],
 ];
 ```
 
 Exporting is generally more straightforward than importing, so there's no need to use an `export_row` like function [(although the option is available)](https://github.com/dev-labs-bg/laravel-csv-importer/#generating-rows-programatically). The exporter can read the `$column_mappings` and automatically outputs the CSV file.
 
-In order to support certain mappings, the importer evaluates the key of the `$column_mappings` entry (`model_property` in the above example) and uses the result as the value of `csv_column` when exporting. Some examples of such mappings are: computed properties, aggregate functions, and relationship properties.
+In order to support certain mappings, the exporter evaluates the key of the `$column_mappings` entry (`model_property` in the above example) and uses the result as the value of `csv_column` when exporting. Some examples of such mappings are: computed properties, aggregate functions, and relationship properties.
 
 The [book exporter example](https://github.com/dev-labs-bg/laravel-csv-importer-examples/blob/master/app/csv/exporters/BookExporter.php#L35) uses such a mapping to get the csv id of its `authors` relationship:
 
@@ -487,15 +487,15 @@ Like the importer `$column_mapping` property, the exporter allows you to simplif
 
 ```
 protected $column_mapping = [
-    'name',                                                              // Column name in the CSV and database is the same
-    ['table_column' => 'csv_column'],                                    // Table column to CSV column mapping with no postprocessor
-    ['table_column' => ['csv_column' => ['processor_name']]],            // Post-processor without paramers (use defaults).
-    ['table_column' => ['csv_column' => ['processor_name' => 'param']]], // Post-processor with parameters.
-    ['table_column' => ['csv_column' => [
+    'name',                                                                                      // Column name in the CSV and database is the same
+    ['table_column' => 'csv_column'],                                                            // Table column to CSV column mapping with no postprocessor
+    ['table_column' => ['csv_column' => ['processor_name']]],                                    // Post-processor without paramers (use defaults).
+    ['table_column' => ['name' => 'csv_column', 'processors' => ['processor_name' => 'param']]], // Post-processor with parameters.
+    ['table_column' => ['name' => csv_column', 'processors' => [
         'processor1' => ['param1', 'param2'],
         'processor2' => 'param',
         'processor3']
-    ]]],                                                                 // Multiple post-processors with a differing number of parameters. 
+    ]]],                                                                                         // Multiple post-processors with a differing number of parameters.
 ];
 ```
 
