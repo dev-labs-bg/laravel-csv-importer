@@ -489,9 +489,9 @@ Like the importer `$column_mapping` property, the exporter allows you to simplif
 protected $column_mapping = [
     'name',                                                                                      // Column name in the CSV and database is the same
     ['table_column' => 'csv_column'],                                                            // Table column to CSV column mapping with no postprocessor
-    ['table_column' => ['name' => csv_column', 'processors' => ['processor_name']]],             // Post-processor without paramers (use defaults).
+    ['table_column' => ['name' => 'csv_column', 'processors' => ['processor_name']]],             // Post-processor without paramers (use defaults).
     ['table_column' => ['name' => 'csv_column', 'processors' => ['processor_name' => 'param']]], // Post-processor with parameters.
-    ['table_column' => ['name' => csv_column', 'processors' => [
+    ['table_column' => ['name' => 'csv_column', 'processors' => [
         'processor1' => ['param1', 'param2'],
         'processor2' => 'param',
         'processor3']
