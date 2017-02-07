@@ -43,7 +43,7 @@ abstract class CSVExporter
             {
                 $col = current($p);
                 if (is_array($col))
-                    $col = key($col);
+                    $col = $col['name'];
                 $p = key($p);
             }
             try
@@ -151,16 +151,18 @@ abstract class CSVExporter
         foreach ($this->column_mapping as $col)
         {
             $csv_col = $db_col = Null;
+            // No processors here, just a straight column mapping.
             if (! is_array($col))
                 continue;
 
             $db_col = key($col);
             $csv_col = current($col);
+            // No processors here either; model property <--> csv column.
             if (! is_array($csv_col))
                 continue;
 
-            $processors = listify(current($csv_col));
-            $csv_col = key($csv_col);
+            $csv_col = $csv_col['name'];
+            $processors = listify(current($col)['processors']);
 
             // Format the processors in (name => params) format,
             // as not all processors have extra parameters defined.
