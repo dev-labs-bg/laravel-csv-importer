@@ -17,7 +17,7 @@ function listify($val)
 
 abstract class CSVImporter
 {
-    protected $column_mappings = [];
+    protected $column_mapping = [];
     private $processors = [];
     public $file = '';
     protected $model = '';
@@ -33,7 +33,45 @@ abstract class CSVImporter
     // The cache key is used if no primary key is defined.
     protected $primary_key = '';
 
-    abstract protected function import_row($row);
+    protected function import_row($row)
+    {
+        $o = new $this->model;
+        return $this->fill_model_from_mappings($row, $o);
+    }
+
+    protected function update($row, $o)
+    {
+        return $this->fill_model_from_mappings($row, $o);
+    }
+
+    private function fill_model_from_mappings($row, $o)
+    {
+        foreach ($this->column_mapping as $p)
+        {
+            $col = $p;
+            $model_prop = $p;
+            if (is_array($p))
+            {
+                $col = key($p);
+                $model_prop = current($p);
+                if (is_array($model_prop))
+                    $model_prop = $model_prop['name'];
+            }
+            try
+            {
+                eval('$o->' . "$model_prop" . ' = $row[$col]' . ';');
+            }
+            catch (ErrorException $e)
+            {
+                Log::error(
+                    'Could not set ' . $p . ' for model ' . ucfirst(get_class($o)).
+                    ' instance id ' . $o->id . ".\n" . 'CSV column: ' . $col
+                );
+                die;
+            }
+        }
+        return $o;
+    }
 
     // PHP doesn't allow lambdas in the main class body.
     protected function get_processors()
@@ -63,7 +101,7 @@ abstract class CSVImporter
             {
                 $val = $row[$col];
                 $current_obj = $this->get_from_cache($row);
-                $model_col = array_get($this->column_mappings, "$col.name", $col);
+                $model_col = array_get($this->column_mapping, "$col.name", $col);
                 $occurences = $this->cache->reduce(function($carry, $o) use ($current_obj, $model_col, $val) {
                     if ($o != $current_obj && strtolower($o->$model_col) == strtolower($val))
                         return $carry + 1;
@@ -122,11 +160,6 @@ abstract class CSVImporter
     protected function pivot_row($row)
     {
         return [$row];
-    }
-
-    protected function add_additional($model_object, $to_add)
-    {
-        return [$to_add];
     }
 
     protected function get_from_cache($val)
@@ -286,16 +319,20 @@ abstract class CSVImporter
             $o = $this->get_from_cache($row);
 
             if ($mode == 'update' && $o)
-                $this->update($row, $o);
+            {
+                $o = $this->update($row, $o);
+                if ($o->isDirty())
+                    $o->save();
+            }
 
             if (! $o)
             {
                 Eloquent::unguard();
                 $o = $this->import_row($row);
+                if (! $o->exists())
+                    $o->save();
                 Eloquent::reguard();
             }
-
-            $this->add_additional($o, $row);
 
             if ($this->cache != Null)
                 $this->cache->index($o, current($this->cache_key));
@@ -322,9 +359,11 @@ abstract class CSVImporter
         // For now, you'll need to manually check if the column exists in the
         // $row array in the import/update.
         $cols_values  = array_filter($row);
-        $column_processors = array_where($this->column_mappings, function($k, $v)
+        $column_processors = array_where($this->column_mapping, function($k, $v)
         {
-            return array_key_exists('processors', $v);
+            if (is_array($v))
+                return array_key_exists('processors', $v);
+            return false;
         });
         foreach ($column_processors as $k=>$v)
             $column_processors[$k] = $v['processors'];
@@ -367,9 +406,11 @@ abstract class CSVImporter
         // $row array, instead of defaulting to a NULL value, as NULL may be
         // a legitimate value.
         $cols_values  = array_filter($row);
-        $column_validators = array_where($this->column_mappings, function($k, $v)
+        $column_validators = array_where($this->column_mapping, function($k, $v)
         {
-            return array_key_exists('validators', $v);
+            if (is_array($v))
+                return array_key_exists('validators', $v);
+            return false;
         });
         foreach ($column_validators as $k=>$v)
             $column_validators[$k] = $v['validators'];
