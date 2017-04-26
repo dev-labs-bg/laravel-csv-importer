@@ -188,6 +188,39 @@ class UserRolesImporter extends CSVImporter
     // Maps an id field in the csv to a database id field. Format ['csv_column_name' => 'db_column_name']
     protected $cache_key = ['id' => 'csv_id'];
 
+    // Maps csv columns to database columns. The importer uses these to automatically
+    // import/update The format here is:
+    //     csv_column_name => database_column_name
+    // or
+    //     csv_column_name
+    // if both column names happen to be the same. For more information on the mapping format,
+    // skip to the column mappings section of the documentation.
+    protected $column_mapping = [
+        ['csv_id' => 'id'],
+        'role_name',
+    ];
+}
+```
+
+Alternatively, you can forego the `$column_mapping` array, and define the import and update functions yourself (you can even mix them together):
+
+```
+<?php
+use YavorIvanov\CsvImporter\CSVImporter;
+class UserRolesImporter extends CSVImporter
+{
+    // Defualt name for the CSV to import.
+    public $file = 'user_roles.csv';
+
+    // Eloquent model name to create/update (case sensitive)
+    protected $model = 'UserRole';
+
+    // Maps an id field in the csv to a database id field. Format ['csv_column_name' => 'db_column_name']
+    protected $primary_key = ['id' => 'csv_id'];
+
+    // Maps an id field in the csv to a database id field. Format ['csv_column_name' => 'db_column_name']
+    protected $cache_key = ['id' => 'csv_id'];
+
     protected function update($row, $o)
     {
         $o->csv_id = $row['id'];
@@ -226,11 +259,12 @@ Field breakdown:
   **Note:** This function is only every called when running the importer in `update` mode.
 
 ### Column mappings
-Often, the database table columns differ in name (or representation) from the CSV files you wish to import. For example, databases accept dates in the [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601) (`YYY-MM-DD`), but your CSV files may contain dates in the American date format (`MM/DD/YYYY`). The `$column_mappings` property allow you to define any name difference between CSV and database table, as well as transform and validate the CSV data before saving.
+Often, the database table columns differ in name (or representation) from the CSV files you wish to import. For example, databases accept dates in the [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601) (`YYY-MM-DD`), but your CSV files may contain dates in the American date format (`MM/DD/YYYY`). The `$column_mapping` property allows you to define any name difference between CSV and database table, as well as transform and validate the CSV data before saving.
 
-The `$column_mappings` format is flexible. It allows you to define a column with a name difference, multiple preprocessing steps, as well as validation functions:
+The `$column_mapping` format is flexible. It allows you to define a column with a name difference, multiple preprocessing steps, as well as validation functions:
+
 ```
-protected $column_mappings = [
+protected $column_mapping = [
     'csv_column' => ['name' => 'table_column',
                           'processors' => ['processor_name' => 'parameter'],
                           'validators' => ['validator_name' => 'parameter']
@@ -238,7 +272,19 @@ protected $column_mappings = [
 ];
 ```
 
-When the importer reads the CSV file, it looks at the `$column_mappings` to determine if it should transform the input data (or run validations against it).
+
+The `$column_mapping` is also used by the importer when no `import_row` or `update` function is defined. It performs the import by running the validator/processor functions on the `csv_column` and saving the result to the specified `table_column`. The `table_column` could also be a model property or model function:
+
+```
+protected $column_mapping = [
+    'csv_column' => 'modelPropertyName',
+];
+```
+
+**Note:** In order to assign to model properties, the importer uses the `table_column` key as part of an [`eval()`](https://github.com/dev-labs-bg/laravel-csv-importer/blob/master/src/YavorIvanov/CsvImporter/CSVImporter.php#L62) call. The call is limited to the current model instance, **yet there are no checks for malicious intent**, such as calling `delete()` or using `id; call_malicious_function(); $variable_name` as a key.
+
+
+When the importer reads the CSV file, it looks at the `$column_mapping` to determine if it should transform the input data (or run validations against it).
 
 The processor function are read from the result of the `get_processors` function:
 ```
@@ -262,14 +308,14 @@ The validators are returned by the `get_validators` function.
 
 For brevity, you can omit unused features from your column specification. For example, importing a column with only a name change can be condensed to the following:
 ```
-protected $column_mappings = [
+protected $column_mapping = [
     'csv_column' => 'table_column',
 ];
 ```
 
 Another example of this is using preprocessors without passing in parameters:
 ```
-protected $column_mappings = [
+protected $column_mapping = [
     'csv_column' => ['name' => 'table_column',
                     'processors' => ['processor1', 'processor2'],
                 ],
@@ -278,7 +324,7 @@ protected $column_mappings = [
 
 Or omitting the array if there is only one processor:
 ```
-protected $column_mappings = [
+protected $column_mapping = [
     'csv_column' => ['name' => 'table_column',
                     'processors' => 'my_column_processor',
                 ],
@@ -315,7 +361,7 @@ This allows the package to avoid importing CSV rows that are already in the data
 Aside from the performance benefit of caching, you can query the cache in importers by calling the 'get_from_cache($hash)'. This is useful when importing self-referential CSVs. An example of this would be importing a tree structure in following format: `[id, name, parent_id]`, where each branch prepends its parent's name to its own.
 
 ### Adding preprocessor functions
-You can define processor functions for your importers by adding a `get_processors()` function, which returns an array of functions. The package will run these functions on the columns which list these processors in the the `$column_mappings`.
+You can define processor functions for your importers by adding a `get_processors()` function, which returns an array of functions. The package will run these functions on the columns which list these processors in the the `$column_mapping`.
 
 You can define the processor functions inline:
 ```
@@ -349,7 +395,7 @@ The [base importer](https://github.com/Yavor-Ivanov/laravel-csv-importer/blob/ma
 **Note:** As of the moment there is no way to register global preprocessors like the base importer does.
 
 ### Adding validation functions
-Validation functions are defined similarly to the preprocessors. The `get_validators` function of the importer returns an array of functions that can be defined to run when an importer runs via the `$column_mappings` property.
+Validation functions are defined similarly to the preprocessors. The `get_validators` function of the importer returns an array of functions that can be defined to run when an importer runs via the `$column_mapping` property.
 
 Below is an example validator which checks a column for uniqueness:
 ```
@@ -360,7 +406,7 @@ protected function get_validators()
         {
             $val = $row[$col];
             $current_obj = $this->get_from_cache($row);
-            $model_col = array_get($this->column_mappings, "$col.name", $col);
+            $model_col = array_get($this->column_mapping, "$col.name", $col);
             $occurrences = $this->cache->reduce(function($carry, $o) use ($current_obj, $model_col, $val) {
                 if ($o != $current_obj && strtolower($o->$model_col) == strtolower($val))
                     return $carry + 1;
@@ -450,12 +496,12 @@ class UserRolesImporter extends CSVExporter
 
 ### Column mappings
 
-The exporter `$column_mappings` property serves the same purpose as the importer [`$column_mappings`](https://github.com/dev-labs-bg/laravel-csv-importer/#column-mappings). It allows you to define a relationship between the table columns (or model properties/methods) and CSV columns. The exporter uses this mapping to generate the CSV output.
+The exporter `$column_mapping` property serves the same purpose as the importer [`$column_mapping`](https://github.com/dev-labs-bg/laravel-csv-importer/#column-mappings). It allows you to define a relationship between the table columns (or model properties/methods) and CSV columns. The exporter uses this mapping to generate the CSV output.
 
-Unlike the importer, the exporter `$column_mappings` allow you to use model properties, as well as map model functions to CSV columns. Here's an example of a mappnig between a model property and a CSV column that uses a postprocessing function:
+Like the importer, the exporter `$column_mapping` allows you to use model properties, as well as map model functions to CSV columns. Here's an example of a mappnig between a model property and a CSV column that uses a postprocessing function:
 
 ```
-protected $column_mappings = [
+protected $column_mapping = [
     'model_property' => ['name' => 'csv_column', 'processors' => ['postprocessor_name' => 'parameter']],
 ];
 ```
@@ -463,14 +509,14 @@ protected $column_mappings = [
 And an example of an exporter mapping a model function to a CSV column:
 
 ```
-protected $column_mappings = [
+protected $column_mapping = [
     'compute_property()' => ['name' => 'csv_column_name', 'processors' => ['postprocessor_name' => 'parameter']],
 ];
 ```
 
-Exporting is generally more straightforward than importing, so there's no need to use an `export_row` like function [(although the option is available)](https://github.com/dev-labs-bg/laravel-csv-importer/#generating-rows-programatically). The exporter can read the `$column_mappings` and automatically outputs the CSV file.
+Exporting is generally more straightforward than importing, so there's no need to use an `export_row` like function [(although the option is available)](https://github.com/dev-labs-bg/laravel-csv-importer/#generating-rows-programatically). The exporter can read the `$column_mapping` and automatically outputs the CSV file.
 
-In order to support certain mappings, the exporter evaluates the key of the `$column_mappings` entry (`model_property` in the above example) and uses the result as the value of `csv_column` when exporting. Some examples of such mappings are: computed properties, aggregate functions, and relationship properties.
+In order to support certain mappings, the exporter evaluates the key of the `$column_mapping` entry (`model_property` in the above example) and uses the result as the value of `csv_column` when exporting. Some examples of such mappings are: computed properties, aggregate functions, and relationship properties.
 
 The [book exporter example](https://github.com/dev-labs-bg/laravel-csv-importer-examples/blob/master/app/csv/exporters/BookExporter.php#L35) uses such a mapping to get the csv id of its `authors` relationship:
 
@@ -489,7 +535,7 @@ Like the importer `$column_mapping` property, the exporter allows you to simplif
 protected $column_mapping = [
     'name',                                                                                      // Column name in the CSV and database is the same
     ['table_column' => 'csv_column'],                                                            // Table column to CSV column mapping with no postprocessor
-    ['table_column' => ['name' => 'csv_column', 'processors' => ['processor_name']]],            // Post-processor without paramers (use defaults).
+    ['table_column' => ['name' => 'csv_column', 'processors' => ['processor_name']]],             // Post-processor without paramers (use defaults).
     ['table_column' => ['name' => 'csv_column', 'processors' => ['processor_name' => 'param']]], // Post-processor with parameters.
     ['table_column' => ['name' => 'csv_column', 'processors' => [
         'processor1' => ['param1', 'param2'],
